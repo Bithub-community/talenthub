@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { FileUpload } from "@/components/ui/file-upload";
 import { predefinedSectors } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -26,30 +27,36 @@ const formSchema = z.object({
   email: z.string().email(),
   phone: z.string().optional(),
   location: z.string().optional(),
-  sectors: z
-    .object({
-      selected: z.array(z.string()).min(1, "En az bir sektör seçmelisiniz"),
-      primary: z.string().min(1, "Birincil sektör seçmelisiniz")
-    })
-    .refine((data) => data.selected.includes(data.primary), {
-      message: "Birincil sektör, seçilen sektörler arasında olmalıdır",
-      path: ["primary"]
-    }),
+  sectors: z.array(z.string().nonempty()).min(1, "En az bir sektör seçmelisiniz"),
   motivation: z.string().optional(),
-  cvUrl: z.string().url().optional(),
-  motivationUrl: z.string().url().optional()
+  cvFile: z
+    .instanceof(File)
+    .refine((file) => !file || file.size <= 10 * 1024 * 1024, {
+      message: "Dosya boyutu 10MB'den küçük olmalı"
+    })
+    .refine((file) => !file || ["application/pdf", "image/jpeg", "image/png", "image/jpg"].includes(file.type), {
+      message: "Sadece PDF, JPEG, PNG dosyaları kabul edilir"
+    })
+    .optional(),
+  motivationFile: z
+    .instanceof(File)
+    .refine((file) => !file || file.size <= 10 * 1024 * 1024, {
+      message: "Dosya boyutu 10MB'den küçük olmalı"
+    })
+    .refine((file) => !file || ["application/pdf", "image/jpeg", "image/png", "image/jpg"].includes(file.type), {
+      message: "Sadece PDF, JPEG, PNG dosyaları kabul edilir"
+    })
+    .optional()
 });
 
 interface ApplicationFormProps {
   defaultToken?: string;
   defaultSelectedSectors?: string[];
-  defaultPrimarySector?: string;
 }
 
 export function ApplicationForm({
   defaultToken,
   defaultSelectedSectors,
-  defaultPrimarySector
 }: ApplicationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -58,15 +65,15 @@ export function ApplicationForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       token: defaultToken ?? "",
-      // new combined sector fields
-      selectedSectors: defaultSelectedSectors ? defaultSelectedSectors.map(String) : [],
-      primarySector: defaultPrimarySector != null ? String(defaultPrimarySector) : undefined,
-      // personal info and location defaults (used by the new payload structure)
+      sectors: defaultSelectedSectors ? defaultSelectedSectors.map(String) : [],
       firstName: "",
       lastName: "",
       email: "",
       phone: "",
-      location: ""
+      location: "",
+      motivation: "",
+      cvFile: undefined,
+      motivationFile: undefined
     }
   });
 
@@ -74,47 +81,113 @@ export function ApplicationForm({
     setIsSubmitting(true);
     setResult(null);
 
-    const payload = {
-      token: values.token,
-      status: "submitted",
-      primaryLocation: values.location,
-      primarySectorId: values.primarySector ? Number(values.primarySector) : undefined,
-      sectors: values.sectors?.map((sector) => Number(sector)) ?? [],
-      personalInfo: {
-        firstName: values.firstName,
-        lastName: values.lastName,
-        email: values.email,
-        phone: values.phone,
-        location: values.location
-      },
-      documents: [
-        values.cvUrl
-          ? {
-              docType: "cv",
-              fileName: "cv",
-              storageUrl: values.cvUrl,
-              mimeType: "application/pdf",
-              sizeBytes: 0
-            }
-          : null,
-        values.motivationUrl
-          ? {
-              docType: "motivation_letter",
-              fileName: "motivation",
-              storageUrl: values.motivationUrl,
-              mimeType: "application/pdf",
-              sizeBytes: 0
-            }
-          : null
-      ].filter(Boolean)
-    };
-
     try {
-      const response = await fetch("/api/applications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
+      // Upload files to MinIO if provided
+      const uploadedDocuments: {
+        docType: string;
+        fileName: string;
+        storageUrl: string;
+        mimeType: string;
+        sizeBytes: number;
+      }[] = [];
+
+      if (values.cvFile) {
+        const formData = new FormData();
+        formData.append("file", values.cvFile);
+
+        const cvResponse = await fetch("/api/uploads", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!cvResponse.ok) {
+          // Try to read error details if available
+          let errText = "CV dosyası yüklenemedi";
+          try {
+            const errJson = await cvResponse.json();
+            errText += `: ${JSON.stringify(errJson)}`;
+          } catch {
+            errText += `: HTTP ${cvResponse.status}`;
+          }
+          throw new Error(errText);
+        }
+
+        const cvResult = await cvResponse.json();
+        uploadedDocuments.push({
+          docType: "cv",
+          fileName: values.cvFile.name,
+          storageUrl: cvResult.file?.storageUrl ?? cvResult.file?.storageUrl,
+          mimeType: cvResult.file.mimeType,
+          sizeBytes: cvResult.file.sizeBytes
+        });
+      }
+
+      if (values.motivationFile) {
+        const formData = new FormData();
+        formData.append("file", values.motivationFile);
+
+        const motivationResponse = await fetch("/api/uploads", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!motivationResponse.ok) {
+          throw new Error("Motivasyon mektubu dosyası yüklenemedi");
+        }
+
+        const motivationResult = await motivationResponse.json();
+        uploadedDocuments.push({
+          docType: "motivation_letter",
+          fileName: values.motivationFile.name,
+          storageUrl: motivationResult.file.storageUrl,
+          mimeType: motivationResult.file.mimeType,
+          sizeBytes: motivationResult.file.sizeBytes
+        });
+      }
+
+      const payload = {
+        token: values.token,
+        status: "submitted",
+        primaryLocation: values.location,
+        sectors: values.sectors?.map((sector) => Number(sector)) ?? [],
+        personalInfo: {
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          phone: values.phone,
+          location: values.location
+        },
+        documents: uploadedDocuments
+      };
+
+      try {
+        const response = await fetch("/api/applications", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          // Try to parse JSON error, fall back to text if parsing fails
+          let errorBody;
+          try {
+            const errJson = await response.json();
+            errorBody = JSON.stringify(errJson);
+          } catch {
+            errorBody = await response.text();
+          }
+          setResult(`Başvuru oluşturulamadı: ${errorBody}`);
+        } else {
+          const json = await response.json();
+          setResult(`Başvuru oluşturuldu. ID: ${json.id}`);
+          form.reset();
+        }
+      } catch (error) {
+        setResult(`Beklenmeyen hata: ${String(error)}`);
+      } finally {
+        setIsSubmitting(false);
+      }
+
 
       if (!response.ok) {
         const error = await response.json();
@@ -266,7 +339,6 @@ export function ApplicationForm({
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="motivation"
@@ -283,12 +355,19 @@ export function ApplicationForm({
             <div className="grid gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
-                name="cvUrl"
+                name="cvFile"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>CV (URL)</FormLabel>
+                    <FormLabel>CV</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://" {...field} />
+                      <FileUpload
+                        value={field.value}
+                        onChange={field.onChange}
+                        label="CV dosyası seçin"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        maxSize={10}
+                        disabled={isSubmitting}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -296,12 +375,19 @@ export function ApplicationForm({
               />
               <FormField
                 control={form.control}
-                name="motivationUrl"
+                name="motivationFile"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Motivasyon Mektubu (URL)</FormLabel>
+                    <FormLabel>Motivasyon Mektubu</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://" {...field} />
+                      <FileUpload
+                        value={field.value}
+                        onChange={field.onChange}
+                        label="Motivasyon mektubu dosyası seçin"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        maxSize={10}
+                        disabled={isSubmitting}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
