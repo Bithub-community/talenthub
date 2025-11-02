@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { predefinedSectors } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 const formSchema = z.object({
   token: z.string().min(10),
@@ -25,8 +26,15 @@ const formSchema = z.object({
   email: z.string().email(),
   phone: z.string().optional(),
   location: z.string().optional(),
-  primarySector: z.string().optional(),
-  sectors: z.string().array().optional(),
+  sectors: z
+    .object({
+      selected: z.array(z.string()).min(1, "En az bir sektör seçmelisiniz"),
+      primary: z.string().min(1, "Birincil sektör seçmelisiniz")
+    })
+    .refine((data) => data.selected.includes(data.primary), {
+      message: "Birincil sektör, seçilen sektörler arasında olmalıdır",
+      path: ["primary"]
+    }),
   motivation: z.string().optional(),
   cvUrl: z.string().url().optional(),
   motivationUrl: z.string().url().optional()
@@ -34,9 +42,15 @@ const formSchema = z.object({
 
 interface ApplicationFormProps {
   defaultToken?: string;
+  defaultSelectedSectors?: string[];
+  defaultPrimarySector?: string;
 }
 
-export function ApplicationForm({ defaultToken }: ApplicationFormProps) {
+export function ApplicationForm({
+  defaultToken,
+  defaultSelectedSectors,
+  defaultPrimarySector
+}: ApplicationFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
@@ -44,7 +58,15 @@ export function ApplicationForm({ defaultToken }: ApplicationFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       token: defaultToken ?? "",
-      sectors: []
+      // new combined sector fields
+      selectedSectors: defaultSelectedSectors ? defaultSelectedSectors.map(String) : [],
+      primarySector: defaultPrimarySector != null ? String(defaultPrimarySector) : undefined,
+      // personal info and location defaults (used by the new payload structure)
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      location: ""
     }
   });
 
@@ -200,60 +222,51 @@ export function ApplicationForm({ defaultToken }: ApplicationFormProps) {
                 </FormItem>
               )}
             />
-            <div className="grid gap-4 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="primarySector"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Birincil Sektör</FormLabel>
-                    <FormControl>
-                      <select
-                        className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                        {...field}
-                      >
-                        <option value="">Seçiniz</option>
-                        {predefinedSectors.map((sector, index) => (
-                          <option key={sector} value={String(index + 1)}>
+            <FormField
+              control={form.control}
+              name="selectedSectors"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Sektör Seçimi</FormLabel>
+                  <FormControl>
+                    <div className="flex flex-wrap gap-2">
+                      {predefinedSectors.map((sector, index) => {
+                        const sectorValue = String(index + 1);
+                        const isSelected = field.value?.includes(sectorValue);
+                        return (
+                          <Button
+                            key={sector}
+                            type="button"
+                            variant={isSelected ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              const currentSectors = field.value ?? [];
+                              if (isSelected) {
+                                field.onChange(currentSectors.filter((s) => s !== sectorValue));
+                                // If this was the primary sector, clear it
+                                if (form.getValues("primarySector") === sectorValue) {
+                                  form.setValue("primarySector", "");
+                                }
+                              } else {
+                                field.onChange([...currentSectors, sectorValue]);
+                              }
+                            }}
+                            className={cn(
+                              "transition-all",
+                              isSelected && "ring-2 ring-primary ring-offset-2"
+                            )}
+                          >
                             {sector}
-                          </option>
-                        ))}
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="sectors"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>İlgilendiğiniz Sektörler</FormLabel>
-                    <FormControl>
-                      <select
-                        multiple
-                        className="h-32 w-full rounded-md border border-input bg-background px-3 text-sm"
-                        value={field.value}
-                        onChange={(event) => {
-                          const options = Array.from(event.target.selectedOptions).map(
-                            (option) => option.value
-                          );
-                          field.onChange(options);
-                        }}
-                      >
-                        {predefinedSectors.map((sector, index) => (
-                          <option key={sector} value={String(index + 1)}>
-                            {sector}
-                          </option>
-                        ))}
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="motivation"
