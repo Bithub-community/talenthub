@@ -1,0 +1,22 @@
+export const predefinedSectors = [
+  "Information Technology (IT)",
+  "Finance and Banking",
+  "Healthcare",
+  "Manufacturing",
+  "Retail and E-commerce",
+  "Construction and Real Estate",
+  "Transportation and Logistics",
+  "Energy and Utilities",
+  "Telecommunications",
+  "Education and Training",
+  "Hospitality and Tourism",
+  "Media and Entertainment",
+  "Agriculture and Food Production",
+  "Legal and Professional Services",
+  "Government and Public Administration",
+  "Nonprofit and NGOs",
+  "Aerospace and Defense",
+  "Chemicals and Materials",
+  "Environmental and Sustainability Services",
+  "Human Resources and Recruitment"
+];

@@ -1,0 +1,31 @@
+# syntax=docker/dockerfile:1.6
+FROM node:20-alpine AS base
+WORKDIR /app
+
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NODE_ENV=production
+
+RUN corepack enable && corepack prepare pnpm@8.15.4 --activate
+
+FROM base AS install
+COPY package.json pnpm-workspace.yaml tsconfig.base.json ./
+COPY apps/main-app/package.json apps/main-app/
+COPY apps/auth-service/package.json apps/auth-service/
+COPY packages/db/package.json packages/db/
+RUN pnpm install --frozen-lockfile --filter hr-main-app... --filter @hr/db...
+
+FROM install AS build
+COPY . .
+RUN pnpm --filter hr-main-app build
+
+FROM node:20-alpine AS production
+WORKDIR /app
+ENV NODE_ENV=production
+RUN corepack enable && corepack prepare pnpm@8.15.4 --activate
+COPY --from=install /app/node_modules ./node_modules
+COPY --from=build /app/apps/main-app/.next ./apps/main-app/.next
+COPY --from=build /app/apps/main-app/public ./apps/main-app/public
+COPY apps/main-app/package.json ./apps/main-app/package.json
+
+EXPOSE 3000
+CMD ["pnpm", "--filter", "hr-main-app", "start"]

@@ -1,0 +1,57 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hr_manager
+      POSTGRES_USER: hr_user
+      POSTGRES_PASSWORD: hr_password
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "hr_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: apps/auth-service/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://hr_user:hr_password@postgres:5432/hr_manager
+      AUTH_PRIVATE_KEY: ${AUTH_PRIVATE_KEY}
+      AUTH_PUBLIC_KEY: ${AUTH_PUBLIC_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+
+  main-app:
+    build:
+      context: .
+      dockerfile: apps/main-app/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      AUTH_SERVICE_URL: http://auth-service:4000
+      DATABASE_URL: postgresql://hr_user:hr_password@postgres:5432/hr_manager
+      AUTH_PUBLIC_KEY: ${AUTH_PUBLIC_KEY}
+    depends_on:
+      auth-service:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+    driver: local

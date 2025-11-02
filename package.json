@@ -1,0 +1,25 @@
+{
+  "name": "hr-manager",
+  "private": true,
+  "packageManager": "pnpm@8.15.4",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --parallel --filter hr-main-app dev --filter auth-service dev",
+    "build": "pnpm --filter hr-main-app build && pnpm --filter auth-service build",
+    "lint": "pnpm --recursive lint",
+    "prisma:generate": "pnpm --filter @hr/db prisma generate",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^7.8.0",
+    "@typescript-eslint/parser": "^7.8.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5",
+    "turbo": "^1.13.3",
+    "typescript": "^5.4.5"
+  }
+}

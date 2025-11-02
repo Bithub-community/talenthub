@@ -1,0 +1,303 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  super_user
+  authorized_user
+  reviewer
+}
+
+enum UserStatus {
+  active
+  suspended
+  deleted
+}
+
+enum InviteType {
+  register_invite
+  view_invite
+}
+
+enum InviteStatus {
+  pending
+  used
+  expired
+  revoked
+}
+
+enum ApplicationStatus {
+  draft
+  submitted
+  under_review
+  accepted
+  rejected
+  withdrawn
+}
+
+enum DocumentType {
+  cv
+  motivation_letter
+  attachment
+}
+
+enum AuditOutcome {
+  success
+  denied
+  error
+}
+
+enum NotificationType {
+  application_viewed
+  user_audit_viewed
+  generic
+}
+
+enum AuthKeyType {
+  auth_service_private
+  main_app_public
+}
+
+model User {
+  id            String          @id @default(uuid()) @db.Uuid
+  userName      String          @unique @map("user_name")
+  email         String?         @unique
+  phone         String?
+  passwordHash  String?         @map("password_hash")
+  role          UserRole        @default(authorized_user)
+  status        UserStatus      @default(active)
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  applications  Application[]
+  invites       Invite[]        @relation("InvitesCreated")
+  reviews       Review[]        @relation("UserReviews")
+  reviewNotes   ReviewNote[]    @relation("ReviewNotesAuthor")
+  auditLogs     AuditLog[]      @relation("AuditLogActor")
+  viewedAudits  UserAuditView[] @relation("AuditViewer")
+  auditsViewed  UserAuditView[] @relation("AuditViewed")
+  notifications Notification[]
+  tokens        TokenIssued[]   @relation("TokenSubject")
+
+  @@map("users")
+}
+
+model Sector {
+  id          Int                 @id @default(autoincrement())
+  code        String              @unique
+  name        String
+  description String?
+  applications Application[]      @relation("PrimarySector")
+  applicationSectors ApplicationSector[]
+
+  @@map("sectors")
+}
+
+model Invite {
+  id               String       @id @default(uuid()) @db.Uuid
+  type             InviteType
+  createdById      String       @map("created_by") @db.Uuid
+  inviteJwtHash    String       @unique @map("invite_jwt_hash")
+  rawJwt           String?      @map("raw_jwt")
+  expiresAt        DateTime?    @map("expires_at")
+  scopeList        String[]     @map("scope_list")
+  filterSnapshot   Json?        @map("filter_snapshot")
+  status           InviteStatus
+  createdAt        DateTime     @default(now()) @map("created_at")
+  usedAt           DateTime?    @map("used_at")
+  reviews          Review[]
+  userAuditViews   UserAuditView[]
+  tokens           TokenIssued[]
+
+  createdBy        User         @relation("InvitesCreated", fields: [createdById], references: [id])
+
+  @@map("invites")
+  @@index([createdById])
+  @@index([expiresAt])
+  @@index([status])
+}
+
+model Application {
+  id                    String                 @id @default(uuid()) @db.Uuid
+  userId                String                 @map("user_id") @db.Uuid
+  status                ApplicationStatus
+  primaryLocation       String?                @map("primary_location")
+  primarySectorId       Int?                   @map("primary_sector_id")
+  tokenFilterSnapshot   Json?                  @map("token_filter_snapshot")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  submittedAt           DateTime?              @map("submitted_at")
+
+  owner                 User                   @relation(fields: [userId], references: [id])
+  primarySector         Sector?                @relation("PrimarySector", fields: [primarySectorId], references: [id])
+  personalInfo          ApplicationPersonalInfo?
+  documents             Document[]
+  reviews               Review[]
+  notifications         Notification[]
+  sectors               ApplicationSector[]
+
+  @@map("applications")
+  @@index([userId])
+  @@index([status])
+  @@index([primarySectorId])
+}
+
+model ApplicationSector {
+  id             Int          @id @default(autoincrement())
+  applicationId  String       @map("application_id") @db.Uuid
+  sectorId       Int          @map("sector_id")
+  application    Application  @relation(fields: [applicationId], references: [id])
+  sector         Sector       @relation(fields: [sectorId], references: [id])
+
+  @@map("application_sectors")
+  @@unique([applicationId, sectorId])
+}
+
+model ApplicationPersonalInfo {
+  id             Int         @id @default(autoincrement())
+  applicationId  String      @unique @map("application_id") @db.Uuid
+  firstName      String      @map("first_name")
+  lastName       String      @map("last_name")
+  email          String
+  phone          String?
+  location       String?
+  dob            DateTime?   @db.Date
+  nationality    String?
+  updatedAt      DateTime    @map("updated_at")
+  application    Application @relation(fields: [applicationId], references: [id])
+
+  @@map("application_personal_info")
+}
+
+model Document {
+  id             String      @id @default(uuid()) @db.Uuid
+  applicationId  String      @map("application_id") @db.Uuid
+  docType        DocumentType @map("doc_type")
+  fileName       String      @map("file_name")
+  storageUrl     String      @map("storage_url")
+  mimeType       String      @map("mime_type")
+  sizeBytes      BigInt      @map("size_bytes")
+  hashSha256     String?     @map("hash_sha256")
+  uploadedAt     DateTime    @map("uploaded_at")
+  application    Application @relation(fields: [applicationId], references: [id])
+
+  @@map("documents")
+  @@index([applicationId, docType])
+}
+
+model Review {
+  id                     String     @id @default(uuid()) @db.Uuid
+  applicationId          String     @map("application_id") @db.Uuid
+  reviewerUserId         String?    @map("reviewer_user_id") @db.Uuid
+  inviteId               String?    @map("invite_id") @db.Uuid
+  visibilityMatched      Boolean    @map("visibility_matched")
+  reviewerFilterSnapshot Json?      @map("reviewer_filter_snapshot")
+  createdAt              DateTime   @map("created_at")
+  application            Application @relation(fields: [applicationId], references: [id])
+  reviewer               User?       @relation("UserReviews", fields: [reviewerUserId], references: [id])
+  invite                 Invite?     @relation(fields: [inviteId], references: [id])
+  notes                  ReviewNote[]
+
+  @@map("reviews")
+  @@index([applicationId])
+  @@index([inviteId])
+  @@index([createdAt])
+}
+
+model ReviewNote {
+  id         Int        @id @default(autoincrement())
+  reviewId   String     @map("review_id") @db.Uuid
+  note       String
+  createdAt  DateTime   @map("created_at")
+  createdById String?   @map("created_by") @db.Uuid
+  review     Review     @relation(fields: [reviewId], references: [id])
+  createdBy  User?      @relation("ReviewNotesAuthor", fields: [createdById], references: [id])
+
+  @@map("review_notes")
+}
+
+model AuditLog {
+  id                   BigInt    @id @default(autoincrement())
+  actorUserId          String?   @map("actor_user_id") @db.Uuid
+  actorIp              String?   @map("actor_ip")
+  actorUserAgent       String?   @map("actor_user_agent")
+  action               String
+  targetType           String    @map("target_type")
+  targetId             String?   @map("target_id")
+  tokenScopeSnapshot   String[]? @map("token_scope_snapshot")
+  tokenFilterSnapshot  Json?     @map("token_filter_snapshot")
+  metadata             Json?
+  outcome              AuditOutcome
+  createdAt            DateTime  @map("created_at")
+  actor                User?     @relation("AuditLogActor", fields: [actorUserId], references: [id])
+
+  @@map("audit_logs")
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([actorUserId, createdAt])
+  @@index([createdAt])
+}
+
+model UserAuditView {
+  id                   BigInt    @id @default(autoincrement())
+  viewerUserId         String    @map("viewer_user_id") @db.Uuid
+  viewedUserId         String    @map("viewed_user_id") @db.Uuid
+  inviteId             String?   @map("invite_id") @db.Uuid
+  tokenScopeSnapshot   String[]? @map("token_scope_snapshot")
+  tokenFilterSnapshot  Json?     @map("token_filter_snapshot")
+  createdAt            DateTime  @map("created_at")
+  viewer               User      @relation("AuditViewer", fields: [viewerUserId], references: [id])
+  viewed               User      @relation("AuditViewed", fields: [viewedUserId], references: [id])
+  invite               Invite?   @relation(fields: [inviteId], references: [id])
+
+  @@map("user_audit_views")
+  @@index([viewedUserId, createdAt])
+  @@index([viewerUserId, createdAt])
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  title     String
+  body      String
+  metadata  Json?
+  isRead    Boolean          @default(false) @map("is_read")
+  readAt    DateTime?        @map("read_at")
+  createdAt DateTime         @map("created_at")
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+  @@index([userId, isRead])
+}
+
+model TokenIssued {
+  id              BigInt   @id @default(autoincrement())
+  subjectUserId   String?  @map("subject_user_id") @db.Uuid
+  inviteId        String?  @map("invite_id") @db.Uuid
+  scopes          String[]
+  filterSnapshot  Json?    @map("filter_snapshot")
+  exp             DateTime? @map("exp")
+  jti             String   @unique
+  createdAt       DateTime @map("created_at")
+  subject         User?    @relation("TokenSubject", fields: [subjectUserId], references: [id])
+  invite          Invite?  @relation(fields: [inviteId], references: [id])
+
+  @@map("tokens_issued")
+}
+
+model AuthKey {
+  id        Int         @id @default(autoincrement())
+  keyType   AuthKeyType @map("key_type")
+  kid       String      @unique
+  pem       String
+  isActive  Boolean     @map("is_active")
+  createdAt DateTime    @map("created_at")
+  rotatedAt DateTime?   @map("rotated_at")
+
+  @@map("auth_keys")
+}
