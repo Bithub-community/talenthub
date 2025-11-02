@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const links = [
   { href: "/invite-init/demo-hash", label: "Invite Girişi" },
@@ -11,6 +12,9 @@ const links = [
 export default function HomePage() {
   return (
     <main className="container my-16 space-y-8">
+      <div className="flex justify-end mb-4">
+        <ThemeToggle />
+      </div>
       <section className="max-w-3xl space-y-4">
         <h1 className="text-3xl font-semibold tracking-tight">
           Davet tabanlı güvenli başvuru yönetimi
@@ -49,7 +53,7 @@ export default function HomePage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Tanımlı scope ve filtreler doğrultusunda güvenlik politikaları uygulanır.
+                Detaylı bilgi için ilgili bölümlere göz atabilirsiniz.
               </p>
             </CardContent>
           </Card>

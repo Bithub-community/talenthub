@@ -1,5 +1,5 @@
 import "@/app/globals.css";
-import { ThemeProvider } from "@/components/layout/theme-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
@@ -20,7 +20,14 @@ export default function RootLayout({
   return (
     <html lang="tr" suppressHydrationWarning>
       <body className={cn(inter.className, "min-h-screen bg-background")}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

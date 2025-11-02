@@ -15,13 +15,16 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/calendar";
+import { predefinedSectors } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 const inviteSchema = z.object({
   createdById: z.string().uuid(),
   inviteeName: z.string().min(3),
   type: z.enum(["register_invite", "view_invite"]),
   scopes: z.string().min(1),
-  filters: z.string().optional(),
+  filters: z.array(z.string()).optional(),
   expiresAt: z.string().optional(),
   adminToken: z.string().min(10)
 });
@@ -33,7 +36,8 @@ export function InviteForm() {
   const form = useForm<z.infer<typeof inviteSchema>>({
     resolver: zodResolver(inviteSchema),
     defaultValues: {
-      type: "register_invite"
+      type: "register_invite",
+      filters: []
     }
   });
 
@@ -48,7 +52,7 @@ export function InviteForm() {
       inviteeName: values.inviteeName,
       type: values.type,
       scopes: values.scopes.split(/[,\s]+/).filter(Boolean),
-      filters: values.filters?.split(/[,\s]+/).filter(Boolean) ?? [],
+      filters: values.filters ?? [],
       expiresAt: values.expiresAt ? new Date(values.expiresAt).toISOString() : null
     };
 
@@ -65,7 +69,7 @@ export function InviteForm() {
       } else {
         const invite = await response.json();
         setResult(`Davet oluşturuldu. Hash: ${invite.inviteJwtHash}`);
-        form.reset({ type: "register_invite" });
+        form.reset({ type: "register_invite", filters: [] });
       }
     } catch (error) {
       setResult(`Beklenmeyen hata: ${String(error)}`);
@@ -110,26 +114,24 @@ export function InviteForm() {
             <FormItem>
               <FormLabel>Davet Tipi</FormLabel>
               <FormControl>
-                <select
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  {...field}
-                >
-                  <option value="register_invite">Başvuru</option>
-                  <option value="view_invite">İnceleme</option>
-                </select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="scopes"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Scope listesi</FormLabel>
-              <FormControl>
-                <Textarea rows={2} placeholder="register-invite view-invite" {...field} />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={field.value === "register_invite" ? "default" : "outline"}
+                    onClick={() => field.onChange("register_invite")}
+                    className="flex-1"
+                  >
+                    Başvuru
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={field.value === "view_invite" ? "default" : "outline"}
+                    onClick={() => field.onChange("view_invite")}
+                    className="flex-1"
+                  >
+                    İnceleme
+                  </Button>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -142,7 +144,33 @@ export function InviteForm() {
             <FormItem>
               <FormLabel>Filtre listesi</FormLabel>
               <FormControl>
-                <Textarea rows={2} placeholder="sector1 sector2" {...field} />
+                <div className="flex flex-wrap gap-2">
+                  {predefinedSectors.map((sector) => {
+                    const isSelected = field.value?.includes(sector);
+                    return (
+                      <Button
+                        key={sector}
+                        type="button"
+                        variant={isSelected ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          const currentFilters = field.value ?? [];
+                          if (isSelected) {
+                            field.onChange(currentFilters.filter((s) => s !== sector));
+                          } else {
+                            field.onChange([...currentFilters, sector]);
+                          }
+                        }}
+                        className={cn(
+                          "transition-all",
+                          isSelected && "ring-2 ring-primary ring-offset-2"
+                        )}
+                      >
+                        {sector}
+                      </Button>
+                    );
+                  })}
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -153,14 +181,71 @@ export function InviteForm() {
           name="expiresAt"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Geçerlilik (ISO tarih)</FormLabel>
+              <FormLabel>Geçerlilik Tarihi</FormLabel>
               <FormControl>
-                <Input placeholder="2024-12-31T20:00:00.000Z" {...field} />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
+                  <DatePicker
+                    value={field.value ? new Date(field.value) : undefined}
+                    onChange={(date: Date | null) =>
+                      field.onChange(date ? date.toISOString() : null)
+                    }
+                    placeholder="Tarih seçin..."
+                  />
+                  <div className="flex gap-2 mt-2 sm:mt-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const d = new Date();
+                        field.onChange(d.toISOString());
+                      }}
+                    >
+                      Bugün
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 1);
+                        field.onChange(d.toISOString());
+                      }}
+                    >
+                      +1 Gün
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 7);
+                        field.onChange(d.toISOString());
+                      }}
+                    >
+                      +7 Gün
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const d = new Date();
+                        d.setDate(d.getDate() + 30);
+                        field.onChange(d.toISOString());
+                      }}
+                    >
+                      +30 Gün
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => field.onChange(null)}>
+                      Temizle
+                    </Button>
+                  </div>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="adminToken"

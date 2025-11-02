@@ -7,11 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  super_user
-  authorized_user
-  reviewer
-}
+ // Remove UserRole enum since it's no longer needed
+ // enum UserRole {
+ //   super_user
+ //   authorized_user
+ //   reviewer
+ // }
 
 enum UserStatus {
   active
@@ -58,18 +59,17 @@ enum NotificationType {
   generic
 }
 
-enum AuthKeyType {
-  auth_service_private
-  main_app_public
-}
+// Remove AuthKeyType enum since AuthKey table is being removed
+// enum AuthKeyType {
+//   auth_service_private
+//   main_app_public
+// }
 
 model User {
   id            String          @id @default(uuid()) @db.Uuid
   userName      String          @unique @map("user_name")
   email         String?         @unique
   phone         String?
-  passwordHash  String?         @map("password_hash")
-  role          UserRole        @default(authorized_user)
   status        UserStatus      @default(active)
   createdAt     DateTime        @default(now()) @map("created_at")
   updatedAt     DateTime        @updatedAt @map("updated_at")
@@ -279,27 +279,34 @@ model Notification {
 
 model TokenIssued {
   id              BigInt   @id @default(autoincrement())
-  subjectUserId   String?  @map("subject_user_id") @db.Uuid
+  subjectUserId   String   @map("subject_user_id") @db.Uuid
+  token           String   @unique
+  tokenHash       String   @map("token_hash") @unique
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
   inviteId        String?  @map("invite_id") @db.Uuid
   scopes          String[]
   filterSnapshot  Json?    @map("filter_snapshot")
   exp             DateTime? @map("exp")
   jti             String   @unique
-  createdAt       DateTime @map("created_at")
-  subject         User?    @relation("TokenSubject", fields: [subjectUserId], references: [id])
+  subject         User     @relation("TokenSubject", fields: [subjectUserId], references: [id])
   invite          Invite?  @relation(fields: [inviteId], references: [id])
 
   @@map("tokens_issued")
 }
 
-model AuthKey {
-  id        Int         @id @default(autoincrement())
-  keyType   AuthKeyType @map("key_type")
-  kid       String      @unique
-  pem       String
-  isActive  Boolean     @map("is_active")
-  createdAt DateTime    @map("created_at")
-  rotatedAt DateTime?   @map("rotated_at")
+// Remove AuthKey model entirely
+// model AuthKey {
+//   id        Int         @id @default(autoincrement())
+//   keyType   AuthKeyType @map("key_type")
+//   kid       String      @unique
+//   pem       String
+//   isActive  Boolean     @map("is_active")
+//   createdAt DateTime    @map("created_at")
+//   rotatedAt DateTime?   @map("rotated_at")
+//
+//   @@map("auth_keys")
+// }
 
   @@map("auth_keys")
 }

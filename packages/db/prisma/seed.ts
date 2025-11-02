@@ -2,6 +2,7 @@ import { prisma } from "../src/client";
 import { predefinedSectors } from "../src/constants";
 
 async function seed() {
+  // Seed predefined sectors
   await Promise.all(
     predefinedSectors.map((name, index) =>
       prisma.sector.upsert({
@@ -15,17 +16,23 @@ async function seed() {
     )
   );
 
-  // create default super user for demos
+  // Create default super user for demos without password (token-based auth only)
   await prisma.user.upsert({
     where: { userName: "super-admin" },
-    update: {},
+    update: {
+      status: "active"
+    },
     create: {
       userName: "super-admin",
       email: "super@example.com",
-      role: "super_user",
       status: "active"
     }
   });
+
+  console.log("Super user created/updated successfully");
+  console.log("Username: super-admin");
+  console.log("Email: super@example.com");
+  console.log("Note: No password or auth key setup is performed by this seed script.");
 }
 
 seed()
