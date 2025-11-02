@@ -197,7 +197,7 @@ export function ApplicationForm({ defaultToken }: ApplicationFormProps) {
                     <Input {...field} />
                   </FormControl>
                   <FormMessage />
-                )}
+                </FormItem>
               )}
             />
             <div className="grid gap-4 md:grid-cols-2">
@@ -264,7 +264,7 @@ export function ApplicationForm({ defaultToken }: ApplicationFormProps) {
                     <Textarea rows={4} {...field} />
                   </FormControl>
                   <FormMessage />
-                )
+                </FormItem>
               )}
             />
             <div className="grid gap-4 md:grid-cols-2">

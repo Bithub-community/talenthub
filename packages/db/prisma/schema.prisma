@@ -228,7 +228,7 @@ model AuditLog {
   action               String
   targetType           String    @map("target_type")
   targetId             String?   @map("target_id")
-  tokenScopeSnapshot   String[]? @map("token_scope_snapshot")
+  tokenScopeSnapshot   String[]  @map("token_scope_snapshot")
   tokenFilterSnapshot  Json?     @map("token_filter_snapshot")
   metadata             Json?
   outcome              AuditOutcome
@@ -247,7 +247,7 @@ model UserAuditView {
   viewerUserId         String    @map("viewer_user_id") @db.Uuid
   viewedUserId         String    @map("viewed_user_id") @db.Uuid
   inviteId             String?   @map("invite_id") @db.Uuid
-  tokenScopeSnapshot   String[]? @map("token_scope_snapshot")
+  tokenScopeSnapshot   String[]  @map("token_scope_snapshot")
   tokenFilterSnapshot  Json?     @map("token_filter_snapshot")
   createdAt            DateTime  @map("created_at")
   viewer               User      @relation("AuditViewer", fields: [viewerUserId], references: [id])
@@ -260,16 +260,18 @@ model UserAuditView {
 }
 
 model Notification {
-  id        String           @id @default(uuid()) @db.Uuid
-  userId    String           @map("user_id") @db.Uuid
-  type      NotificationType
-  title     String
-  body      String
-  metadata  Json?
-  isRead    Boolean          @default(false) @map("is_read")
-  readAt    DateTime?        @map("read_at")
-  createdAt DateTime         @map("created_at")
-  user      User             @relation(fields: [userId], references: [id])
+  id            String           @id @default(uuid()) @db.Uuid
+  userId        String           @map("user_id") @db.Uuid
+  applicationId String?          @map("application_id") @db.Uuid
+  type          NotificationType
+  title         String
+  body          String
+  metadata      Json?
+  isRead        Boolean          @default(false) @map("is_read")
+  readAt        DateTime?        @map("read_at")
+  createdAt     DateTime         @map("created_at")
+  user          User             @relation(fields: [userId], references: [id])
+  application   Application?     @relation(fields: [applicationId], references: [id])
 
   @@map("notifications")
   @@index([userId, isRead])
