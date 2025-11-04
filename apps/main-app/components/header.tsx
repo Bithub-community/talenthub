@@ -16,6 +16,9 @@ export function Header() {
             <Link href="/applications/new" className="text-sm font-medium hover:text-primary">
               Yeni Başvuru
             </Link>
+            <Link href="/applications/search" className="text-sm font-medium hover:text-primary">
+              Başvuru Ara
+            </Link>
           </nav>
         </div>
         <div className="flex items-center gap-2">

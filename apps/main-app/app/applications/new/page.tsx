@@ -2,11 +2,12 @@ import { ApplicationForm } from "@/components/forms/application-form";
 import { Header } from "@/components/header";
 
 interface NewApplicationPageProps {
-  searchParams?: { token?: string };
+  searchParams?: Promise<{ token?: string }>;
 }
 
-export default function NewApplicationPage({ searchParams }: NewApplicationPageProps) {
-  const token = searchParams?.token;
+export default async function NewApplicationPage({ searchParams }: NewApplicationPageProps) {
+  const params = await searchParams;
+  const token = params?.token;
   return (
     <>
       <Header />
