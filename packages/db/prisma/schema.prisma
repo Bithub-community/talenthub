@@ -294,19 +294,3 @@ model TokenIssued {
 
   @@map("tokens_issued")
 }
-
-// Remove AuthKey model entirely
-// model AuthKey {
-//   id        Int         @id @default(autoincrement())
-//   keyType   AuthKeyType @map("key_type")
-//   kid       String      @unique
-//   pem       String
-//   isActive  Boolean     @map("is_active")
-//   createdAt DateTime    @map("created_at")
-//   rotatedAt DateTime?   @map("rotated_at")
-//
-//   @@map("auth_keys")
-// }
-
-  @@map("auth_keys")
-}

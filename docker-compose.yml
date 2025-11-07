@@ -17,6 +17,21 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - talenthub-net
+
+  db-migrate:
+    build:
+      context: .
+      dockerfile: packages/db/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://hr_user:hr_password@postgres:5432/hr_manager
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - talenthub-net
+    restart: "no"
 
   auth-service:
     build:
@@ -29,10 +44,12 @@ services:
       AUTH_PRIVATE_KEY: ${AUTH_PRIVATE_KEY}
       AUTH_PUBLIC_KEY: ${AUTH_PUBLIC_KEY}
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
     ports:
       - "4000:4000"
+    networks:
+      - talenthub-net
 
   main-app:
     build:
@@ -47,8 +64,10 @@ services:
     depends_on:
       auth-service:
         condition: service_started
-      postgres:
-        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
+    networks:
+      - talenthub-net
 
   minio:
     image: minio/minio:latest
@@ -61,26 +80,22 @@ services:
     ports:
       - "9000:9000"
       - "9001:9001"
-    volumes:
-      - minio_data:/data
-      MINIO_DEFAULT_BUCKETS: hr-manager-uploads
-    command: server /data --console-address ":9001"
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - minio_data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 30s
       timeout: 20s
       retries: 3
-
-    ports:
-      - "3000:3000"
+    volumes:
+      - minio_data:/data
+    networks:
+      - talenthub-net
 
 volumes:
   pgdata:
     driver: local
   minio_data:
     driver: local
+
+networks:
+  talenthub-net:
+    driver: bridge

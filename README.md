@@ -1,60 +1,89 @@
 # HR Manager
 
-## Local Development Setup
+## Prerequisites
 
-### Prerequisites
+- Node.js (v20+)
+- pnpm
+- Docker & Docker Compose
+- OpenSSL (for key generation)
 
-- Node.js (v20 or higher)
-- pnpm package manager
-- Docker and Docker Compose (for database)
+## Setup
 
-### Getting Started
-
-1. **Clone the repository**
+1. **Install dependencies**
    ```bash
-   git clone <repository-url>
-   cd hr-manager
+   pnpm install
    ```
 
-2. **Install dependencies**
+2. **Generate RSA keys (4096-bit)**
+   
    ```bash
-   pnpm instal
+   # Linux/Mac
+   openssl genrsa -out private.pem 4096
+   openssl rsa -in private.pem -pubout -out public.pem
+   ```
+   
+   ```powershell
+   # Windows (PowerShell)
+   openssl genrsa -out private.pem 4096
+   openssl rsa -in private.pem -pubout -out public.pem
    ```
 
-3. **Start the database**
+3. **Configure environment variables**
+   
+   Add to `.env` or Docker Compose:
+   
+   ```bash
+   # Linux/Mac
+   export AUTH_PRIVATE_KEY=$(cat private.pem | sed 's/$/\\n/' | tr -d '\n')
+   export AUTH_PUBLIC_KEY=$(cat public.pem | sed 's/$/\\n/' | tr -d '\n')
+   ```
+   
+   ```powershell
+   # Windows (PowerShell)
+   $env:AUTH_PRIVATE_KEY = (Get-Content private.pem -Raw) -replace "`r`n", "\n" -replace "`n", "\n"
+   $env:AUTH_PUBLIC_KEY = (Get-Content public.pem -Raw) -replace "`r`n", "\n" -replace "`n", "\n"
+   ```
+
+4. **Start services**
    ```bash
    docker-compose up -d
    ```
 
-4. **Set up the database**
+5. **Setup database**
+   
    ```bash
-    $env:DATABASE_URL="postgresql://hr_user:hr_password@localhost:5432/hr_manager"
+   # Linux/Mac
+   export DATABASE_URL="postgresql://hr_user:hr_password@localhost:5432/hr_manager"
+   cd apps/main-app
+   pnpm db:push
+   ```
+   
+   ```powershell
+   # Windows (PowerShell)
+   $env:DATABASE_URL="postgresql://hr_user:hr_password@localhost:5432/hr_manager"
    cd apps/main-app
    pnpm db:push
    ```
 
-5. **Run the development server**
+6. **Run development server**
    ```bash
    pnpm dev
    ```
 
-6. **Open the application**
-   
-   Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
+7. **Open** [http://localhost:3000](http://localhost:3000)
 
-### Available Scripts
+## Scripts
 
-- `pnpm dev` - Start the development server
-- `pnpm build` - Build the application for production
-- `pnpm start` - Start the production server
-- `pnpm lint` - Run ESLint
-- `pnpm db:push` - Push database schema changes
-- `pnpm db:migrate` - Run database migrations
-- `pnpm db:studio` - Open Prisma Studio for database management
+- `pnpm dev` - Development server
+- `pnpm build` - Production build
+- `pnpm start` - Production server
+- `pnpm lint` - Lint code
+- `pnpm db:push` - Push schema changes
+- `pnpm db:migrate` - Run migrations
+- `pnpm db:studio` - Database GUI
 
-### Project Structure
+## Structure
 
-This is a monorepo using pnpm workspaces:
-
-- `apps/main-app` - Main Next.js application
-- `packages/` - Shared packages and utilities
+- `apps/main-app` - Next.js application
+- `apps/auth-service` - Authentication service
+- `packages/` - Shared packages

@@ -1,9 +1,7 @@
 node_modules
 .next
 .git
-pnpm-lock.yaml
 yarn.lock
-package-lock.json
 Dockerfile
 .devcontainer
 .env*
