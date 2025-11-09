@@ -13,23 +13,23 @@ export interface CalendarProps {
 
 export function Calendar({ selected, onSelect, className }: CalendarProps) {
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
-  
+
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
-  
-  const days = [];
-  
+
+  const days = [] as Array<any>;
+
   // Empty cells for days before month starts
   for (let i = 0; i < firstDayOfMonth; i++) {
     days.push(<div key={`empty-${i}`} className="h-9 w-9" />);
   }
-  
+
   // Days of the month
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     const isSelected = selected && date.toDateString() === selected.toDateString();
     const isToday = date.toDateString() === new Date().toDateString();
-    
+
     days.push(
       <Button
         key={day}
@@ -46,7 +46,7 @@ export function Calendar({ selected, onSelect, className }: CalendarProps) {
       </Button>
     );
   }
-  
+
   return (
     <div className={cn("p-3", className)}>
       <div className="flex items-center justify-between mb-4">
@@ -89,34 +89,34 @@ export function DatePicker({ value, onChange, placeholder }: {
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
     value ? new Date(value) : undefined
   );
-  
+
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
     onChange?.(date.toISOString());
     setIsOpen(false);
   };
-  
+
   const handleQuickSelect = (days: number) => {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + days);
     setSelectedDate(futureDate);
     onChange?.(futureDate.toISOString());
   };
-  
+
   const handleMonthSelect = (months: number) => {
     const futureDate = new Date();
     futureDate.setMonth(futureDate.getMonth() + months);
     setSelectedDate(futureDate);
     onChange?.(futureDate.toISOString());
   };
-  
+
   const handleYearSelect = (years: number) => {
     const futureDate = new Date();
     futureDate.setFullYear(futureDate.getFullYear() + years);
     setSelectedDate(futureDate);
     onChange?.(futureDate.toISOString());
   };
-  
+
   return (
     <div className="relative">
       <div className="flex gap-2">
@@ -135,7 +135,7 @@ export function DatePicker({ value, onChange, placeholder }: {
           📅
         </Button>
       </div>
-      
+
       {isOpen && (
         <div className="absolute top-full left-0 z-50 mt-2 w-80 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none">
           <div className="space-y-4">

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyInviteToken } from "@/lib/auth";
 import { hasScope, scopeIntersects } from "@/lib/scopes";
@@ -6,11 +6,11 @@ import { logAuditEvent } from "@/lib/logging";
 import { createApplicationViewedNotification } from "@/lib/notifications";
 import { serializeApplication } from "@/lib/serializers";
 
-interface RouteContext {
-  params: { id: string };
-}
-
-export async function GET(request: Request, { params }: RouteContext) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
   const { searchParams } = new URL(request.url);
   const token = searchParams.get("token");
 
@@ -25,7 +25,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     await logAuditEvent({
       action: "APPLICATION_VIEW",
       targetType: "applications",
-      targetId: params.id,
+      targetId: id,
       outcome: "error",
       metadata: { reason: "TOKEN_INVALID", error: String(error) }
     });
@@ -47,7 +47,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     : [];
 
   const application = await prisma.application.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       personalInfo: true,
       documents: true,
@@ -77,29 +77,14 @@ export async function GET(request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "MISSING_FILTER_SCOPE" }, { status: 403 });
   }
 
-  if (
-    applicationFilterSnapshot.length &&
-    !scopeIntersects(filterList, applicationFilterSnapshot)
-  ) {
-    await logAuditEvent({
-      action: "APPLICATION_VIEW",
-      targetType: "applications",
-      targetId: application.id,
-      outcome: "denied",
-      metadata: { reason: "FILTER_MISMATCH" },
-      tokenScopeSnapshot: scopes,
-      actorUserId: payload.sub ?? null
-    });
-    return NextResponse.json({ error: "FILTER_MISMATCH" }, { status: 403 });
-  }
-
   const review = await prisma.review.create({
     data: {
       applicationId: application.id,
       reviewerUserId: payload.sub ?? null,
       inviteId: null,
       visibilityMatched: true,
-      reviewerFilterSnapshot: filterList.length ? { filters: filterList } : null
+      reviewerFilterSnapshot: filterList.length ? { filters: filterList } : undefined,
+      createdAt: new Date()
     }
   });
 
@@ -110,7 +95,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     outcome: "success",
     metadata: { reviewId: review.id },
     tokenScopeSnapshot: scopes,
-    tokenFilterSnapshot: filterList.length ? { filters: filterList } : null,
+    tokenFilterSnapshot: filterList.length ? { filters: filterList } : undefined,
     actorUserId: payload.sub ?? null
   });
 

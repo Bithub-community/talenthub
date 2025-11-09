@@ -1,5 +1,6 @@
 import { Header } from '@/components/header';
 import { SearchClient } from './search-client';
+import React from 'react';
 
 export default function ApplicationSearchPage() {
   return (

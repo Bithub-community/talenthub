@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { predefinedSectors } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 import { Search, X } from 'lucide-react';
+import React from 'react';
 
 interface ApplicationSearchFormProps {
   onSearch: (params: { name: string; sectors: string[] }) => void;

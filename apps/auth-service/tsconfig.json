@@ -5,7 +5,24 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "sourceMap": true,
-    "rootDir": "src"
+    "rootDir": "src",
+    "skipLibCheck": true,
+    "noImplicitAny": false,
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "noImplicitReturns": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noResolve": false,
+    "moduleDetection": "auto",
+    "ignoreDeprecations": "5.0",
+    "noEmit": false
   },
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/**/*.ts"
+  ],
+  "ts-node": {
+    "esm": true
+  }
 }

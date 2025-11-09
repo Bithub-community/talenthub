@@ -1,3 +1,4 @@
+import * as React from "react";
 import { prisma } from "@/lib/prisma";
 import { InviteForm } from "@/components/forms/invite-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,75 +20,122 @@ export default async function DashboardPage() {
     })
   ]);
 
-  return (
-    <>
-      <Header />
-      <main className="container my-12 space-y-6">
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold">Yönetim Paneli</h1>
-          <p className="text-muted-foreground">
-            Super-user kullanıcılar için davet oluşturma, log ve bildirim özetleri.
-          </p>
-        </header>
-        <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-          <Card>
-            <CardHeader>
-              <CardTitle>Davet Oluştur</CardTitle>
-              <CardDescription>Yeni başvuru veya inceleme daveti hazırlayın.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <InviteForm />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Son Davetler</CardTitle>
-              <CardDescription>En güncel 5 davet kaydı</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              {invites.map((invite) => (
-                <div key={invite.id} className="rounded border p-3">
-                  <div className="font-medium">{invite.type}</div>
-                  <div className="text-muted-foreground">{invite.inviteJwtHash}</div>
-                </div>
-              ))}
-              {!invites.length && <p className="text-muted-foreground">Henüz davet yok.</p>}
-            </CardContent>
-          </Card>
-        </div>
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Son Audit Loglar</CardTitle>
-              <CardDescription>Son 10 sistem olayı</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              {auditLogs.map((log) => (
-                <div key={log.id} className="rounded border p-3">
-                  <div className="font-medium">{log.action}</div>
-                  <div className="text-muted-foreground">{new Date(log.createdAt).toLocaleString("tr-TR")}</div>
-                </div>
-              ))}
-              {!auditLogs.length && <p className="text-muted-foreground">Henüz log yok.</p>}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Son Bildirimler</CardTitle>
-              <CardDescription>Son 5 bildirim</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              {notifications.map((notif) => (
-                <div key={notif.id} className="rounded border p-3">
-                  <div className="font-medium">{notif.type}</div>
-                  <div className="text-muted-foreground">{notif.message}</div>
-                </div>
-              ))}
-              {!notifications.length && <p className="text-muted-foreground">Henüz bildirim yok.</p>}
-            </CardContent>
-          </Card>
-        </div>
-      </main>
-    </>
+  return React.createElement(
+    React.Fragment,
+    null,
+    React.createElement(Header, null),
+    React.createElement(
+      "main",
+      { className: "container my-12 space-y-6" },
+      React.createElement(
+        "header",
+        { className: "space-y-1" },
+        React.createElement("h1", { className: "text-2xl font-semibold" }, "Yönetim Paneli"),
+        React.createElement(
+          "p",
+          { className: "text-muted-foreground" },
+          "Super-user kullanıcılar için davet oluşturma, log ve bildirim özetleri."
+        )
+      ),
+      React.createElement(
+        "div",
+        { className: "grid gap-6 lg:grid-cols-[2fr_1fr]" },
+        React.createElement(
+          Card,
+          null,
+          React.createElement(
+            CardHeader,
+            null,
+            React.createElement(CardTitle, null, "Davet Oluştur"),
+            React.createElement(CardDescription, null, "Yeni başvuru veya inceleme daveti hazırlayın.")
+          ),
+          React.createElement(
+            CardContent,
+            null,
+            React.createElement(InviteForm, null)
+          )
+        ),
+        React.createElement(
+          Card,
+          null,
+          React.createElement(
+            CardHeader,
+            null,
+            React.createElement(CardTitle, null, "Son Davetler"),
+            React.createElement(CardDescription, null, "En güncel 5 davet kaydı")
+          ),
+          React.createElement(
+            CardContent,
+            { className: "space-y-3 text-sm" },
+            invites.length
+              ? invites.map((invite) =>
+                  React.createElement(
+                    "div",
+                    { key: invite.id, className: "rounded border p-3" },
+                    React.createElement("div", { className: "font-medium" }, invite.type),
+                    React.createElement("div", { className: "text-muted-foreground" }, invite.inviteJwtHash)
+                  )
+                )
+              : React.createElement("p", { className: "text-muted-foreground" }, "Henüz davet yok.")
+          )
+        )
+      ),
+      React.createElement(
+        "div",
+        { className: "grid gap-6 lg:grid-cols-2" },
+        React.createElement(
+          Card,
+          null,
+          React.createElement(
+            CardHeader,
+            null,
+            React.createElement(CardTitle, null, "Son Audit Loglar"),
+            React.createElement(CardDescription, null, "Son 10 sistem olayı")
+          ),
+          React.createElement(
+            CardContent,
+            { className: "space-y-3 text-sm" },
+            auditLogs.length
+              ? auditLogs.map((log) =>
+                  React.createElement(
+                    "div",
+                    { key: log.id, className: "rounded border p-3" },
+                    React.createElement("div", { className: "font-medium" }, log.action),
+                    React.createElement(
+                      "div",
+                      { className: "text-muted-foreground" },
+                      new Date(log.createdAt).toLocaleString("tr-TR")
+                    )
+                  )
+                )
+              : React.createElement("p", { className: "text-muted-foreground" }, "Henüz log yok.")
+          )
+        ),
+        React.createElement(
+          Card,
+          null,
+          React.createElement(
+            CardHeader,
+            null,
+            React.createElement(CardTitle, null, "Son Bildirimler"),
+            React.createElement(CardDescription, null, "Son 5 bildirim")
+          ),
+          React.createElement(
+            CardContent,
+            { className: "space-y-3 text-sm" },
+            notifications.length
+              ? notifications.map((notif) =>
+                  React.createElement(
+                    "div",
+                    { key: notif.id, className: "rounded border p-3" },
+                    React.createElement("div", { className: "font-medium" }, notif.type),
+                    React.createElement("div", { className: "text-muted-foreground" }, notif.title)
+                  )
+                )
+              : React.createElement("p", { className: "text-muted-foreground" }, "Henüz bildirim yok.")
+          )
+        )
+      )
+    )
   );
 }

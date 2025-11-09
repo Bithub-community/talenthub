@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
 import { predefinedSectors } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import React from "react";
 
 const formSchema = z.object({
   token: z.string().min(10),
@@ -187,23 +188,12 @@ export function ApplicationForm({
       } finally {
         setIsSubmitting(false);
       }
-
-
-      if (!response.ok) {
-        const error = await response.json();
-        setResult(`Başvuru oluşturulamadı: ${JSON.stringify(error)}`);
-      } else {
-        const json = await response.json();
-        setResult(`Başvuru oluşturuldu. ID: ${json.id}`);
-        form.reset();
-      }
-    } catch (error) {
-      setResult(`Beklenmeyen hata: ${String(error)}`);
-    } finally {
-      setIsSubmitting(false);
+    }
+    catch (error) {
+      console.error("An error occurred:", error);
+      throw error;
     }
   }
-
   return (
     <Card>
       <CardHeader>
@@ -297,7 +287,7 @@ export function ApplicationForm({
             />
             <FormField
               control={form.control}
-              name="selectedSectors"
+              name="sectors"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Sektör Seçimi</FormLabel>
@@ -316,12 +306,6 @@ export function ApplicationForm({
                               const currentSectors = field.value ?? [];
                               if (isSelected) {
                                 field.onChange(currentSectors.filter((s) => s !== sectorValue));
-                                // If this was the primary sector, clear it
-                                if (form.getValues("primarySector") === sectorValue) {
-                                  form.setValue("primarySector", "");
-                                }
-                              } else {
-                                field.onChange([...currentSectors, sectorValue]);
                               }
                             }}
                             className={cn(

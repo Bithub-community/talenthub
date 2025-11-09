@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/calendar";
 import { predefinedSectors } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import React from "react";
 
 const inviteSchema = z.object({
   createdById: z.string().uuid(),
@@ -185,9 +186,9 @@ export function InviteForm() {
               <FormControl>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3">
                   <DatePicker
-                    value={field.value ? new Date(field.value) : undefined}
-                    onChange={(date: Date | null) =>
-                      field.onChange(date ? date.toISOString() : null)
+                    value={field.value || undefined}
+                    onChange={(date: String | null) =>
+                      field.onChange(date ? date : null)
                     }
                     placeholder="Tarih seçin..."
                   />

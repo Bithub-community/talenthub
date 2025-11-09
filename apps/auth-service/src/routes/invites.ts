@@ -49,7 +49,7 @@ export async function registerInviteRoutes(app: FastifyInstance) {
         inviteJwtHash: randomUUID(),
         status: "pending",
         scopeList: scopes,
-        filterSnapshot: filters ? { filters } : null,
+        filterSnapshot: filters ? { filters } : undefined,
         expiresAt,
         rawJwt: null
       }
@@ -80,9 +80,10 @@ export async function registerInviteRoutes(app: FastifyInstance) {
       data: {
         inviteId: invite.id,
         scopes,
-        filterSnapshot: filters ? { filters } : null,
+        filterSnapshot: filters ? { filters } : undefined,
         exp: expiresAt,
-        jti: randomUUID()
+        jti: randomUUID(),
+        createdAt: new Date()
       }
     });
 

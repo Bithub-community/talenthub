@@ -1,5 +1,5 @@
 {
-  "name": "hr-manager",
+  "name": "@hr/package",
   "private": true,
   "packageManager": "pnpm@8.15.4",
   "workspaces": [
@@ -7,8 +7,8 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "pnpm --parallel --filter hr-main-app dev --filter auth-service dev",
-    "build": "pnpm --filter hr-main-app build && pnpm --filter auth-service build",
+    "dev": "pnpm --parallel --filter @hr/main-app dev --filter @hr/auth-service dev",
+    "build": "pnpm --filter @hr/main-app build && pnpm --filter @hr/auth-service build",
     "lint": "pnpm --recursive lint",
     "prisma:generate": "pnpm --filter @hr/db prisma generate",
     "format": "prettier --write ."

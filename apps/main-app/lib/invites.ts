@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { logAuditEvent } from "@/lib/logging";
 import { slugify } from "@/lib/string";
+import { Prisma } from "@hr/db";
 
 export async function getInviteByHash(hash: string) {
   const invite = await prisma.invite.findUnique({
@@ -51,7 +52,7 @@ export async function createInvite(params: {
       inviteJwtHash: slugify(crypto.randomUUID()),
       status: "pending",
       scopeList: params.scopes,
-      filterSnapshot: params.filters ? { filters: params.filters } : null,
+      filterSnapshot: params.filters ? { filters: params.filters } : Prisma.JsonNull,
       expiresAt: params.expiresAt ?? null
     }
   });

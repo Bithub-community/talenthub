@@ -6,6 +6,7 @@ import { hasScope, scopeIntersects } from "@/lib/scopes";
 import { slugify } from "@/lib/string";
 import { serializeApplication } from "@/lib/serializers";
 import { z } from "zod";
+import { randomUUID } from "crypto";
 
 const documentSchema = z.object({
   docType: z.enum(["cv", "motivation_letter", "attachment"]),
@@ -84,7 +85,6 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ error: "FORBIDDEN" }, { status: 403 });
   }
-
   const filterList = Array.isArray(payload["filter-list"])
     ? (payload["filter-list"] as string[])
     : [];
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "SCOPE_FILTER_MISMATCH" }, { status: 403 });
   }
 
-  const userId = payload.sub ?? crypto.randomUUID();
+  const userId = payload.sub ? String(payload.sub) : randomUUID();
 
   await prisma.user.upsert({
     where: { id: userId },
@@ -108,14 +108,13 @@ export async function POST(request: Request) {
       status: "active"
     }
   });
-
   const created = await prisma.application.create({
     data: {
       userId,
       status,
       primaryLocation: primaryLocation ?? null,
       primarySectorId: primarySectorId ?? null,
-      tokenFilterSnapshot: filterList.length ? { filters: filterList } : null,
+      tokenFilterSnapshot: filterList.length ? { filters: filterList } : undefined,
       submittedAt: status === "submitted" ? new Date() : null,
       personalInfo: {
         create: {
@@ -131,21 +130,21 @@ export async function POST(request: Request) {
       },
       sectors: sectors?.length
         ? {
-            create: sectors.map((sectorId) => ({ sectorId }))
-          }
+          create: sectors.map((sectorId) => ({ sectorId }))
+        }
         : undefined,
       documents: documents?.length
         ? {
-            create: documents.map((doc) => ({
-              docType: doc.docType,
-              fileName: doc.fileName,
-              storageUrl: doc.storageUrl,
-              mimeType: doc.mimeType,
-              sizeBytes: BigInt(doc.sizeBytes),
-              hashSha256: doc.hashSha256 ?? null,
-              uploadedAt: new Date()
-            }))
-          }
+          create: documents.map((doc) => ({
+            docType: doc.docType,
+            fileName: doc.fileName,
+            storageUrl: doc.storageUrl,
+            mimeType: doc.mimeType,
+            sizeBytes: BigInt(doc.sizeBytes),
+            hashSha256: doc.hashSha256 ?? null,
+            uploadedAt: new Date()
+          }))
+        }
         : undefined
     },
     include: {
@@ -154,6 +153,8 @@ export async function POST(request: Request) {
       documents: true
     }
   });
+
+
 
   await logAuditEvent({
     action: "APPLICATION_CREATE",
@@ -213,11 +214,11 @@ export async function GET(request: Request) {
   const applications = await prisma.application.findMany({
     where: filterList.length
       ? {
-          tokenFilterSnapshot: {
-            path: ["filters"],
-            array_contains: filterList
-          }
+        tokenFilterSnapshot: {
+          path: ["filters"],
+          array_contains: filterList
         }
+      }
       : undefined,
     include: {
       personalInfo: true,

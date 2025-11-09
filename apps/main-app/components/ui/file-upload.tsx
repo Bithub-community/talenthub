@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,11 +15,11 @@ interface FileUploadProps {
   disabled?: boolean;
 }
 
-export function FileUpload({ 
-  value, 
-  onChange, 
-  onUploadComplete, 
-  label, 
+export function FileUpload({
+  value,
+  onChange,
+  onUploadComplete,
+  label,
   accept = ".pdf,.jpg,.jpeg,.png",
   maxSize = 10,
   disabled = false
@@ -102,7 +102,7 @@ export function FileUpload({
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
-      
+
       {value ? (
         <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
           <File className="h-4 w-4" />

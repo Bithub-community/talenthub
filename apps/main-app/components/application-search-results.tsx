@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ChevronLeft, ChevronRight, FileText, Mail, Phone, MapPin } from 'lucide-react';
 import Link from 'next/link';
+import React from 'react';
 
 interface ApplicationSearchResultsProps {
   applications: any[];
@@ -133,7 +134,7 @@ export function ApplicationSearchResults({
                       <p className="text-sm font-medium mb-2">Sektörler</p>
                       <div className="flex flex-wrap gap-1">
                         {application.sectors.map((sectorRelation: any) => (
-                          <Badge key={sectorRelation.sector.id} variant="secondary" size="sm">
+                          <Badge key={sectorRelation.sector.id} variant="secondary">
                             {sectorRelation.sector.name}
                           </Badge>
                         ))}
@@ -146,7 +147,7 @@ export function ApplicationSearchResults({
                       <p className="text-sm font-medium mb-2">Belgeler</p>
                       <div className="flex gap-2">
                         {application.documents.map((doc: any) => (
-                          <Badge key={doc.id} variant="outline" size="sm">
+                          <Badge key={doc.id} variant="outline">
                             <FileText className="h-3 w-3 mr-1" />
                             {doc.docType === 'cv' ? 'CV' : 'Motivasyon Mektubu'}
                           </Badge>

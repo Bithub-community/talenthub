@@ -11,6 +11,7 @@ export async function createApplicationViewedNotification(params: {
       type: "application_viewed",
       title: "Başvurunuz görüntülendi",
       body: `Başvurunuz ${params.reviewerUserId ?? "anonim"} tarafından görüntülendi`,
+      createdAt: new Date(),
       metadata: {
         applicationId: params.applicationId,
         reviewerUserId: params.reviewerUserId

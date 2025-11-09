@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Header } from "@/components/header";
+import React from "react";
 
 interface InviteInitPageProps {
   params: { hash: string };

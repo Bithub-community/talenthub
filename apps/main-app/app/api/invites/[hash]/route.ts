@@ -1,19 +1,19 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getInviteByHash } from "@/lib/invites";
 import { logAuditEvent } from "@/lib/logging";
 
-interface RouteContext {
-  params: { hash: string };
-}
-
-export async function GET(_request: Request, { params }: RouteContext) {
-  const invite = await getInviteByHash(params.hash);
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ hash: string }> }
+) {
+  const { hash } = await params;
+  const invite = await getInviteByHash(hash);
 
   if (!invite) {
     await logAuditEvent({
       action: "INVITE_INIT",
       targetType: "invites",
-      targetId: params.hash,
+      targetId: hash,
       outcome: "denied",
       metadata: { reason: "NOT_FOUND" }
     });

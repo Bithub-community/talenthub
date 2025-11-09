@@ -3,8 +3,8 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import dotenv from "dotenv";
 import jwtPlugin from "@fastify/jwt";
 import rateLimit from "@fastify/rate-limit";
-import { registerInviteRoutes } from "./routes/invites";
-import { registerDiagnosticsRoutes } from "./routes/diagnostics";
+import { registerInviteRoutes } from "./routes/invites.js";
+import { registerDiagnosticsRoutes } from "./routes/diagnostics.js";
 
 dotenv.config();
 
@@ -51,7 +51,10 @@ declare module "fastify" {
       reply: FastifyReply
     ) => Promise<void>;
   }
-  interface FastifyRequest {
+}
+
+declare module "@fastify/jwt" {
+  interface FastifyJWT {
     user: {
       sub?: string;
       scope?: string[];

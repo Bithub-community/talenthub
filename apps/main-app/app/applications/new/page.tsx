@@ -1,5 +1,6 @@
 import { ApplicationForm } from "@/components/forms/application-form";
 import { Header } from "@/components/header";
+import React from "react";
 
 interface NewApplicationPageProps {
   searchParams?: Promise<{ token?: string }>;

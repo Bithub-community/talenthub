@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { ApplicationSearchForm } from '@/components/forms/application-search-form';
 import { ApplicationSearchResults } from '@/components/application-search-results';
+import React from 'react';
 
 interface SearchClientProps {
   initialApplications: any[];
